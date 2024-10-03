@@ -1,0 +1,51 @@
+import os
+import xml.etree.ElementTree as ET
+
+def convert_xml_to_yolo(xml_folder, yolo_folder):
+    # Create the YOLO folder if it doesn't exist
+    if not os.path.exists(yolo_folder):
+        os.makedirs(yolo_folder)
+
+    # Loop through each XML file in the provided folder
+    for xml_file in os.listdir(xml_folder):
+        if xml_file.endswith('.xml'):
+            # Parse the XML file
+            tree = ET.parse(os.path.join(xml_folder, xml_file))
+            root = tree.getroot()
+
+            # Get the image name without the file extension
+            image_name = root.find('filename').text.replace('.jpg', '')  # Adjust if your images are in a different format
+
+            # Create the path for the YOLO annotation file
+            yolo_file = os.path.join(yolo_folder, image_name + '.txt')
+
+            # Open the YOLO file for writing
+            with open(yolo_file, 'w') as f:
+                for obj in root.findall('object'):
+                    # Assign class ID based on object name
+                    class_id = 0 if obj.find('name').text == 'masked' else 1  # Adjust based on your class names
+
+                    # Find the bounding box coordinates
+                    bndbox = obj.find('bndbox')
+
+                    # Calculate center coordinates and dimensions, normalized by image size
+                    x_center = (int(bndbox.find('xmin').text) + int(bndbox.find('xmax').text)) / 2 / 224  # Replace 224 with actual width
+                    y_center = (int(bndbox.find('ymin').text) + int(bndbox.find('ymax').text)) / 2 / 224  # Replace 224 with actual height
+                    width = (int(bndbox.find('xmax').text) - int(bndbox.find('xmin').text)) / 224  # Replace 224 with actual width
+                    height = (int(bndbox.find('ymax').text) - int(bndbox.find('ymin').text)) / 224  # Replace 224 with actual height
+
+                    # Write the annotation to the YOLO file
+                    f.write(str(class_id) + ' ' + str(x_center) + ' ' + str(y_center) + ' ' + str(width) + ' ' + str(height) + '\n')
+
+# Set your paths for training annotations and YOLO labels
+train_xml_folder = 
+train_yolo_folder = 
+
+# Set your paths for validation annotations and YOLO labels
+valid_xml_folder = 
+valid_yolo_folder =
+# Convert training annotations to YOLO format
+convert_xml_to_yolo(train_xml_folder, train_yolo_folder)
+
+# Convert validation annotations to YOLO format
+convert_xml_to_yolo(valid_xml_folder, valid_yolo_folder)
